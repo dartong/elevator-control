@@ -1,4 +1,4 @@
-# literally-the-best-elevator-control
+# elevator-control
 What the URL states.
 
 Contains code for our elevator project.
