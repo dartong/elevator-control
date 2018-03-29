@@ -1,1 +1,1 @@
-disp('the mitochondria is the powerhouse of the cell');
+disp('The mitochondria is the traphouse of the cell');
