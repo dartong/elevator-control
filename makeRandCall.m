@@ -1,7 +1,9 @@
 function call = makeRandCall(NUM_FLOORS)
     % Simulates random traffic for elevator
+    %
+    % Authors: 
     
-    CALL_FREQUENCY = 0.9; % number of calls per iteration
+    CALL_FREQUENCY = 0.5; % number of calls per iteration
     call = struct();
     
     if rand() < CALL_FREQUENCY
