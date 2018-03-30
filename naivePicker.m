@@ -1,8 +1,14 @@
-function carIndex = naivePicker(cars)
-    % returns carIndex (integer between 1 and NUM_CARS) that will respond
-    % to this call
-    % 
-    % Authors: 
+function carIndex = naivePicker(t, config, cars, call)
+% Parameters:
+%  t (integer): the current elapsed time (s)
+%  config (struct): contains configuration constants defined in main.m
+%  cars (struct array): data for each of the elevator cars
+%  call (struct): data about this call
+%
+% Return:
+%  carIndex (integer between 1 and NUM_CARS) that will respond to this call
+% 
+% Authors: 
     
-    carIndex = 1; % for testing purposes
+    carIndex = randi(config.NUM_CARS); % for testing purposes
 end
