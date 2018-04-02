@@ -75,26 +75,30 @@ for it = 1:ITERATIONS
             disp(['  arrived at y = ', num2str(car.y)]);
             
             % adjust the relevant passenger struct(s)
-            for ipass = 1:length(passengers)
+            % start at 2 because the first is empty
+            for ipass = 2:length(passengers)
                 if passengers(ipass).pickedUp % drop passenger off
                     if passengers(ipass).toFloor * config.FLOOR_HEIGHT == car.y
                         % TODO
                     end
                 else % pick passenger up
                     if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == car.y
-                        disp(['  picked up passenger ', num2str(ipass)]);
+                        disp(['  picked up passenger ', num2str(ipass-1)]);
                         
                         passengers(ipass).pickedUp = true;
                         passengers(ipass).pickUpTime = it;
                         passengers(ipass).pickUpCar = icar;
                         
-                        cars(icar).destinations = [passengers(ipass).toFloor, car.destinations];
+                        % add new destination to queue and remove current floor
+                        fromFiltered = car.destinations ~= passengers(ipass).fromFloor;
+                        cars(icar).destinations = [passengers(ipass).toFloor,...
+                            car.destinations(fromFiltered)];
                     end
                 end
             end % end for
         end
         
-        disp(['  new destinations: ', num2str(car.destinations)]);
+        disp(['  new destinations: ', num2str(cars(icar).destinations)]);
     end
     
 end
