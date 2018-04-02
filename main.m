@@ -13,6 +13,7 @@ pickerAlg = @naivePicker; % which algorithm to test. Either naivePicker or fastP
 
 ITERATIONS = 10; % number of times to run through (seconds)
 
+config.CALL_FREQUENCY = 0.5; % average number of calls per iteration
 config.NUM_FLOORS = 14;
 config.NUM_CARS = 2;
 config.FLOOR_HEIGHT = 1;
@@ -36,10 +37,11 @@ end
 %% run simulation
 
 for it = 1:ITERATIONS
-    call = makeRandCall(config.NUM_FLOORS);
     disp(['--- t = ', num2str(it), ' ---']);
     
-    if call.fromFloor % fromFloor == 0 if there is no call
+    if it == 1 || rand() < config.CALL_FREQUENCY
+        call = makeRandCall(config.NUM_FLOORS);
+        
         % The picker can't know the destination, just the direction (up/down).
         % This limitation keeps it more realistic.
         callSanitized.fromFloor = call.fromFloor;
