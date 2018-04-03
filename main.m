@@ -60,6 +60,7 @@ for it = 1:ITERATIONS
         passengers(end).toFloor = call.toFloor;
         passengers(end).responder = responder;
         passengers(end).pickedUp = false;
+        passengers(end).droppedOff = false;
     else
         disp('No call made');
     end
@@ -81,7 +82,14 @@ for it = 1:ITERATIONS
             for ipass = 2:length(passengers)
                 if passengers(ipass).pickedUp % drop passenger off
                     if passengers(ipass).toFloor * config.FLOOR_HEIGHT == car.y
-                        % TODO
+                        disp(['  dropped off passenger ', num2str(ipass-1)]);
+                        
+                        passengers(ipass).droppedOff = true;
+                        passengers(ipass).dropOffTime = it;
+                        
+                        % add new destination to queue and remove current floor
+                        toFiltered = cars(icar).destinations ~= passengers(ipass).toFloor;
+                        cars(icar).destinations = cars(icar).destinations(toFiltered);
                     end
                 else % pick passenger up
                     if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == car.y
@@ -92,15 +100,15 @@ for it = 1:ITERATIONS
                         passengers(ipass).pickUpCar = icar;
                         
                         % add new destination to queue and remove current floor
-                        fromFiltered = car.destinations ~= passengers(ipass).fromFloor;
+                        fromFiltered = cars(icar).destinations ~= passengers(ipass).fromFloor;
                         cars(icar).destinations = [passengers(ipass).toFloor,...
-                            car.destinations(fromFiltered)];
+                            cars(icar).destinations(fromFiltered)];
                     end
                 end
             end % end for
         end
         
-        disp(['  new destinations: ', num2str(cars(icar).destinations)]);
+        disp(['  destinations: ', num2str(cars(icar).destinations)]);
     end
     
 end
