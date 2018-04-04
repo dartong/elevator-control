@@ -13,7 +13,7 @@ pickerAlg = @naivePicker; % which algorithm to test. Either naivePicker or fastP
 
 ITERATIONS = 10; % number of times to run through (seconds)
 
-config.CALL_FREQUENCY = 0.5; % average number of calls per iteration
+config.CALL_FREQUENCY = 0.1; % average number of calls per iteration
 config.NUM_FLOORS = 14;
 config.NUM_CARS = 2;
 config.FLOOR_HEIGHT = 1;
@@ -39,7 +39,7 @@ end
 for it = 1:ITERATIONS
     disp(['--- t = ', num2str(it), ' ---']);
     
-    if it == 1 || rand() < config.CALL_FREQUENCY
+    if it == 1 || rand() < config.CALL_FREQUENCY % always make a call the first time through
         call = makeRandCall(config.NUM_FLOORS);
         
         % The picker can't know the destination, just the direction (up/down).
@@ -68,7 +68,7 @@ for it = 1:ITERATIONS
     % TODO: update all elevator positions:
     for icar = 1:config.NUM_CARS
         car = cars(icar);
-        [cars(icar).y, cars(icar).velocity] = updateY(car);
+        [cars(icar).y, cars(icar).velocity] = updateY(config, car);
         
         disp(['CAR ', num2str(icar), ':']);
         disp(['  to y = ', num2str(car.y)])
@@ -82,10 +82,12 @@ for it = 1:ITERATIONS
             for ipass = 2:length(passengers)
                 if passengers(ipass).pickedUp % drop passenger off
                     if passengers(ipass).toFloor * config.FLOOR_HEIGHT == car.y
-                        disp(['  dropped off passenger ', num2str(ipass-1)]);
-                        
                         passengers(ipass).droppedOff = true;
                         passengers(ipass).dropOffTime = it;
+                        passengers(ipass).totalTime = it - passengers(ipass).startTime;
+                        
+                        disp(['  dropped off passenger ', num2str(ipass-1),...
+                            '. Total waiting time: ', num2str(passengers(ipass).totalTime)]);
                         
                         % add new destination to queue and remove current floor
                         toFiltered = cars(icar).destinations ~= passengers(ipass).toFloor;
