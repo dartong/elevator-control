@@ -34,5 +34,5 @@ stopsFracBase = -150;      % fraction of stops/number of floors
 
 %% determine best car, return as carIndex
 
-%    carIndex = randi(config.NUM_CARS); % for testing purposes
+% carIndex = randi(config.NUM_CARS); % for testing purposes
 end

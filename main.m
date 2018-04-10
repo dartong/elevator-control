@@ -16,8 +16,8 @@ ITERATIONS = 10; % number of times to run through (seconds)
 config.CALL_FREQUENCY = 0.1; % average number of calls per iteration
 config.NUM_FLOORS = 14;
 config.NUM_CARS = 2;
-config.FLOOR_HEIGHT = 1;
-config.BOARDING_TIME = 10; % time elevator doors stay open for boarding (s)
+config.FLOOR_HEIGHT = 1; % m
+config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
 config.ACCELERATION = 1.5; % m/s^2
 
@@ -32,6 +32,7 @@ for icar = 1:config.NUM_CARS
     cars(icar).doorsOpen = false;
     cars(icar).destinations = []; % Next floors this car wants to travel to.
                                   % First number goes first, and so on.
+    cars(icar).timeRemaining = 0; % how long to wait before it can leave
 end
 
 %% run simulation
@@ -68,10 +69,18 @@ for it = 1:ITERATIONS
     % TODO: update all elevator positions:
     for icar = 1:config.NUM_CARS
         car = cars(icar);
-        [cars(icar).y, cars(icar).velocity] = updateY(config, car);
-        
         disp(['CAR ', num2str(icar), ':']);
-        disp(['  to y = ', num2str(car.y)])
+        
+        % If the car still has to wait, don't call updateY. Instead,
+        % decrement the time the car has to remain waiting
+        if car.timeRemaining > 0
+            disp(['  Waiting for ', num2str(cars(icar).timeRemaining), ' more second(s)']);
+            cars(icar).timeRemaining = car.timeRemaining - 1;
+        else
+            [cars(icar).y, cars(icar).velocity] = updateY(config, car);
+            disp(['  to y = ', num2str(car.y)]);
+        end
+        
         
         % if car is stopped at a floor that is a destination
         if car.velocity == 0 && ismember(car.y, car.destinations * config.FLOOR_HEIGHT)
@@ -92,6 +101,8 @@ for it = 1:ITERATIONS
                         % add new destination to queue and remove current floor
                         toFiltered = cars(icar).destinations ~= passengers(ipass).toFloor;
                         cars(icar).destinations = cars(icar).destinations(toFiltered);
+                        
+                        cars(icar).timeRemaining = config.BOARDING_TIME;
                     end
                 else % pick passenger up
                     if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == car.y
@@ -105,6 +116,8 @@ for it = 1:ITERATIONS
                         fromFiltered = cars(icar).destinations ~= passengers(ipass).fromFloor;
                         cars(icar).destinations = [passengers(ipass).toFloor,...
                             cars(icar).destinations(fromFiltered)];
+                        
+                        cars(icar).timeRemaining = config.BOARDING_TIME;
                     end
                 end
             end % end for
