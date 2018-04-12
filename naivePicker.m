@@ -26,36 +26,38 @@ function carIndex = naivePicker(t, config, cars, call)
 % Gives set values for scores, numbers can be tweaked as necessary
 % If a fraction is included, that fraction is multiplied by the score value
 num_cars = config.NUM_CARS; % simplifies config.NUM_CARS
+sums = zeros(1,num_cars);   % holds the score total for each car
+
+% Change these values to modify scoring!
 floorCorrect = 100;     % same floor as call
 directionCorrect = 70;  % same direction
 directionFracBase = 50;     % fraction of calls towards the same direction/all calls
 distanceFracBase = 20;      % 1 - fraction of distance/building height
 stopsFracBase = -150;      % fraction of stops/number of floors
-sums = zeros(1,num_cars);   % holds the score total for each car
 
 
 %% Sums each car's point total
 % does so via for loop from 1 to num_cars
-for iCar = 1:config.NUM_CARS
-    % Gather necessary data - simplifies future coding
-
-
+for iCar = 1:num_cars
+    %% simplify structs
     % car data
     currentPos = cars(iCar).y;
     destinations = cars(iCar).destinations;
     velocity = cars(iCar).velocity;
-
+    [temp,stops] = size(destinations);  % gets number of stops; ignore temp
+    
     % call data
     %toFloor = call.toFloor;
     direction = call.direction;
     fromFloor = call.fromFloor;
     
-    % same floor?
+    %% start scoring for iCar
+    % floorCorrect
     if currentPos == fromFloor
         sums(iCar) = sums(iCar) + 100;
     end;
     
-    % same direction?
+    % directionCorrect
     if sign(direction) == sign(velocity)
         % makes sure that car is headed towards call
         if sign(direction) == -1 && currentPos > fromFloor
@@ -67,8 +69,13 @@ for iCar = 1:config.NUM_CARS
     
     % directionFracBase
     numSame = 0;
-    for iDestinations = 1:size(destinations)
-        direc = destinations(iDestinations) - currentPos;
+    % for loop checks each destination and determines the direction needed
+    % to be taken
+    % TODO: change comparison to be between a destination and its next
+    % destination?
+    for iDestinations = 1:stops
+        direc = destinations(1,iDestinations) - currentPos;
+        % makes sure that car is headed towards call
         if sign(direc) == sign(direction)
             if sign(direction) == -1 && currentPos > fromFloor
                 numSame = numSame + 1;
@@ -77,15 +84,13 @@ for iCar = 1:config.NUM_CARS
             end;
         end;
     end;
-    
-   % sums(iCar) = sums(iCar) + directionFracBase * (numSame/size(destinations));
+    sums(iCar) = sums(iCar) + directionFracBase * (numSame/stops);
     
     % distanceFracBase
     difference = abs(currentPos - fromFloor);
     sums(iCar) = sums(iCar) + distanceFracBase*(1 - (difference/config.NUM_FLOORS));
 
     % stopsFracBase
-    [temp,stops] = size(destinations);
     stops = stops/num_cars;
     disp(stops);
     sums(iCar) = sums(iCar) + stopsFracBase*stops;
@@ -95,6 +100,4 @@ end;
 %% determine best car, return as carIndex
 [val, idx] = max(sums);
 carIndex = idx;
-
-% carIndex = randi(config.NUM_CARS); % for testing purposes
 end
