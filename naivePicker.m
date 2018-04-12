@@ -77,11 +77,13 @@ for iCar = 1:config.NUM_CARS
         end;
     end;
     
-    directionFracBase = directionFracBase * (numSame/destinations);
+    sums(iCar) = sums(iCar) + directionFracBase * (numSame/destinations);
     
-    %
-            
+    % distanceFracBase
+    difference = abs(currentPos - fromFloor);
+    sums(iCar) = sums(iCar) + distanceFracBase*(1 - (difference/config.NUM_FLOORS));
 
+    % stopsFracBase
 
 
 %% determine best car, return as carIndex
