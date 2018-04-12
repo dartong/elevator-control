@@ -18,27 +18,14 @@ function carIndex = naivePicker(t, config, cars, call)
 %  carIndex (integer between 1 and NUM_CARS) that will respond to this call
 % 
 % Authors: 
-    
 
-%% Gather necessary data - simplifies future coding
 
-% config data
-num_cars = config.NUM_CARS;
 
-% car data
-currentPos = cars.y;
-destinations = cars.destinations;
-velocity = cars.velocity;
 
-% call data
-toFloor = call.toFloor;
-direction = call.direction;
-fromFloor = call.fromFloor;
-
-%% Create scoring system
+%% Create scoring system, set up basic parameters
 % Gives set values for scores, numbers can be tweaked as necessary
 % If a fraction is included, that fraction is multiplied by the score value
-
+num_cars = config.NUM_CARS; % simplifies config.NUM_CARS
 floorCorrect = 100;     % same floor as call
 directionCorrect = 70;  % same direction
 directionFracBase = 50;     % fraction of calls towards the same direction/all calls
@@ -50,6 +37,19 @@ sums = zeros(1,num_cars);   % holds the score total for each car
 %% Sums each car's point total
 % does so via for loop from 1 to num_cars
 for iCar = 1:config.NUM_CARS
+    % Gather necessary data - simplifies future coding
+
+
+    % car data
+    currentPos = cars(iCar).y;
+    destinations = cars(iCar).destinations;
+    velocity = cars(iCar).velocity;
+
+    % call data
+    %toFloor = call.toFloor;
+    direction = call.direction;
+    fromFloor = call.fromFloor;
+    
     % same floor?
     if currentPos == fromFloor
         sums(iCar) = sums(iCar) + 100;
@@ -67,26 +67,34 @@ for iCar = 1:config.NUM_CARS
     
     % directionFracBase
     numSame = 0;
-    while iDestinations = 1:size(destinations)
+    for iDestinations = 1:size(destinations)
         direc = destinations(iDestinations) - currentPos;
         if sign(direc) == sign(direction)
             if sign(direction) == -1 && currentPos > fromFloor
                 numSame = numSame + 1;
             elseif sign(direction) == 1 && currentPos < fromFloor
                 numSame = numSame + 1;
+            end;
         end;
     end;
     
-    sums(iCar) = sums(iCar) + directionFracBase * (numSame/destinations);
+   % sums(iCar) = sums(iCar) + directionFracBase * (numSame/size(destinations));
     
     % distanceFracBase
     difference = abs(currentPos - fromFloor);
     sums(iCar) = sums(iCar) + distanceFracBase*(1 - (difference/config.NUM_FLOORS));
 
     % stopsFracBase
-
+    [temp,stops] = size(destinations);
+    stops = stops/num_cars;
+    disp(stops);
+    sums(iCar) = sums(iCar) + stopsFracBase*stops;
+    
+end;
 
 %% determine best car, return as carIndex
+[val, idx] = max(sums);
+carIndex = idx;
 
 % carIndex = randi(config.NUM_CARS); % for testing purposes
 end
