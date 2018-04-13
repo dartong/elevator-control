@@ -13,8 +13,8 @@ pickerAlg = @naivePicker; % which algorithm to test. Either naivePicker or fastP
 
 ITERATIONS = 10; % number of times to run through (seconds)
 
-config.CALL_FREQUENCY = 0.1; % average number of calls per iteration
-config.NUM_FLOORS = 14;
+config.CALL_FREQUENCY = 0.2; % average number of calls per iteration (between 0 and 1)
+config.NUM_FLOORS = 5;
 config.NUM_CARS = 2;
 config.FLOOR_HEIGHT = 1; % m
 config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
@@ -66,7 +66,7 @@ for it = 1:ITERATIONS
         disp('No call made');
     end
     
-    % TODO: update all elevator positions:
+    % --- update all elevator positions ---
     for icar = 1:config.NUM_CARS
         car = cars(icar);
         disp(['CAR ', num2str(icar), ':']);

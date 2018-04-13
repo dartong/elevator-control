@@ -44,7 +44,7 @@ for iCar = 1:num_cars
     currentPos = cars(iCar).y;
     destinations = cars(iCar).destinations;
     velocity = cars(iCar).velocity;
-    [temp,stops] = size(destinations);  % gets number of stops; ignore temp
+    [~,stops] = size(destinations);  % gets number of stops
     
     % call data
     %toFloor = call.toFloor;
@@ -54,37 +54,39 @@ for iCar = 1:num_cars
     %% start scoring for iCar
     % floorCorrect
     if currentPos == fromFloor
-        sums(iCar) = sums(iCar) + 100;
-    end;
+        sums(iCar) = sums(iCar) + floorCorrect;
+    end
     
     % directionCorrect
     if sign(direction) == sign(velocity)
         % makes sure that car is headed towards call
         if sign(direction) == -1 && currentPos > fromFloor
-            sums(iCar) = sums(iCar) + 70;
+            sums(iCar) = sums(iCar) + directionCorrect;
         elseif sign(direction) == 1 && currentPos < fromFloor
-            sums(iCar) = sums(iCar) + 70;
-        end;
-    end;
+            sums(iCar) = sums(iCar) + directionCorrect;
+        end
+    end
     
     % directionFracBase
-    numSame = 0;
-    % for loop checks each destination and determines the direction needed
-    % to be taken
-    % TODO: change comparison to be between a destination and its next
-    % destination?
-    for iDestinations = 1:stops
-        direc = destinations(1,iDestinations) - currentPos;
-        % makes sure that car is headed towards call
-        if sign(direc) == sign(direction)
-            if sign(direction) == -1 && currentPos > fromFloor
-                numSame = numSame + 1;
-            elseif sign(direction) == 1 && currentPos < fromFloor
-                numSame = numSame + 1;
-            end;
-        end;
-    end;
-    sums(iCar) = sums(iCar) + directionFracBase * (numSame/stops);
+    if stops > 0 % only matters if there are already stops
+        numSame = 0;
+        % for loop checks each destination and determines the direction needed
+        % to be taken
+        % TODO: change comparison to be between a destination and its next
+        % destination?
+        for iDestinations = 1:stops
+            direc = destinations(1,iDestinations) - currentPos;
+            % makes sure that car is headed towards call
+            if sign(direc) == sign(direction)
+                if sign(direction) == -1 && currentPos > fromFloor
+                    numSame = numSame + 1;
+                elseif sign(direction) == 1 && currentPos < fromFloor
+                    numSame = numSame + 1;
+                end
+            end
+        end
+        sums(iCar) = sums(iCar) + directionFracBase * (numSame/stops);
+    end
     
     % distanceFracBase
     difference = abs(currentPos - fromFloor);
@@ -92,12 +94,14 @@ for iCar = 1:num_cars
 
     % stopsFracBase
     stops = stops/num_cars;
-    disp(stops);
+    %disp(stops);
     sums(iCar) = sums(iCar) + stopsFracBase*stops;
     
-end;
+end
+
+disp(['Car scores: ', num2str(sums)]);
 
 %% determine best car, return as carIndex
-[val, idx] = max(sums);
+[~, idx] = max(sums);
 carIndex = idx;
 end
