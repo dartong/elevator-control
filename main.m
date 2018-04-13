@@ -26,6 +26,10 @@ config.ACCELERATION = 1.5; % m/s^2
 passengers = struct();
 cars = struct();
 
+numDroppedOff = 0; % number of passengers successfully dropped off
+numPickedUp = 0; % passengers currently in an elevator
+numWaiting = 0; % passengers waiting for an elevator to arrive
+
 for icar = 1:config.NUM_CARS
     cars(icar).y = randi(config.NUM_FLOORS) * config.FLOOR_HEIGHT; % position of TOP of car
     cars(icar).velocity = 0;
@@ -42,6 +46,7 @@ for it = 1:ITERATIONS
     
     if it == 1 || rand() < config.CALL_FREQUENCY % always make a call the first time through
         call = makeRandCall(config.NUM_FLOORS);
+        numWaiting = numWaiting + 1;
         
         % The picker can't know the destination, just the direction (up/down).
         % This limitation keeps it more realistic.
@@ -91,6 +96,9 @@ for it = 1:ITERATIONS
             for ipass = 2:length(passengers)
                 if passengers(ipass).pickedUp % drop passenger off
                     if passengers(ipass).toFloor * config.FLOOR_HEIGHT == car.y
+                        numDroppedOff = numDroppedOff + 1;
+                        numPickedUp = numPickedUp - 1;
+                        
                         passengers(ipass).droppedOff = true;
                         passengers(ipass).dropOffTime = it;
                         passengers(ipass).totalTime = it - passengers(ipass).startTime;
@@ -106,6 +114,9 @@ for it = 1:ITERATIONS
                     end
                 else % pick passenger up
                     if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == car.y
+                        numPickedUp = numPickedUp + 1;
+                        numWaiting = numWaiting - 1;
+                        
                         disp(['  picked up passenger ', num2str(ipass-1)]);
                         
                         passengers(ipass).pickedUp = true;
@@ -133,4 +144,7 @@ end
 disp(' ');
 disp('----- END OF RUN -----');
 disp(['Iterations: ', num2str(ITERATIONS)]);
-disp(['Passengers: ', num2str(length(passengers) - 1)]);
+disp(['Total passengers: ', num2str(length(passengers) - 1)]);
+disp(['  Passengers waiting for car: ', num2str(numWaiting)]);
+disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
+disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
