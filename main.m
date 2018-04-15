@@ -17,7 +17,7 @@ ITERATIONS = 10; % number of times to run through (seconds)
 
 config.CALL_FREQUENCY = 0.2; % average number of calls per iteration (between 0 and 1)
 config.NUM_FLOORS = 5;
-config.NUM_CARS = 2;
+config.NUM_CARS = 1;
 config.FLOOR_HEIGHT = 1; % m
 config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
@@ -39,6 +39,8 @@ for icar = 1:config.NUM_CARS
     cars(icar).destinations = []; % Next floors this car wants to travel to.
                                   % First number goes first, and so on.
     cars(icar).timeRemaining = 0; % how long to wait before it can leave
+    
+    msg(['Car ', num2str(icar), ' at y = ', num2str(cars(icar).y)]);
 end
 
 %% run simulation
@@ -81,27 +83,28 @@ for it = 1:ITERATIONS
         
         % If the car still has to wait, don't call updateY. Instead,
         % decrement the time the car has to remain waiting
-        if car.timeRemaining > 0
+        if cars(icar).timeRemaining > 0
             msg(['  Waiting for ', num2str(cars(icar).timeRemaining), ' more second(s)']);
-            cars(icar).timeRemaining = car.timeRemaining - 1;
+            cars(icar).timeRemaining = cars(icar).timeRemaining - 1;
         else
-            [cars(icar).y, cars(icar).velocity] = updateY(config, car);
-            msg(['  to y = ', num2str(car.y)]);
+            [cars(icar).y, cars(icar).velocity] = updateY(config, cars(icar));
+            msg(['  to y = ', num2str(cars(icar).y)]);
         end
         
         
         % if car is stopped at a floor that is a destination
-        if car.velocity == 0 && ismember(car.y, car.destinations * config.FLOOR_HEIGHT)
-            msg(['  arrived at y = ', num2str(car.y)]);
+        if cars(icar).velocity == 0 && ismember(cars(icar).y, cars(icar).destinations * config.FLOOR_HEIGHT)
+            msg(['  arrived at y = ', num2str(cars(icar).y)]);
             
             % adjust the relevant passenger struct(s)
             % start at 2 because the first is empty
             for ipass = 2:length(passengers)
                 if passengers(ipass).pickedUp % drop passenger off
-                    if passengers(ipass).toFloor * config.FLOOR_HEIGHT == car.y
+                    if passengers(ipass).toFloor * config.FLOOR_HEIGHT == cars(icar).y && ...
+                            passengers(ipass).responder == icar
                         numDroppedOff = numDroppedOff + 1;
                         numPickedUp = numPickedUp - 1;
-                        disp(numPickedUp);
+                        %disp(numPickedUp);
                         
                         passengers(ipass).droppedOff = true;
                         passengers(ipass).dropOffTime = it;
@@ -117,10 +120,10 @@ for it = 1:ITERATIONS
                         cars(icar).timeRemaining = config.BOARDING_TIME;
                     end
                 else % pick passenger up
-                    if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == car.y
+                    if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == cars(icar).y
                         numPickedUp = numPickedUp + 1;
                         numWaiting = numWaiting - 1;
-                        disp(numPickedUp);
+                        %disp(numPickedUp);
                         
                         msg(['  picked up passenger ', num2str(ipass-1)]);
                         
