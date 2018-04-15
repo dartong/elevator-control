@@ -1,5 +1,5 @@
 
-function carIndex = naivePicker(t, config, cars, call)
+function [carIndex, sums] = naivePicker(t, config, cars, call)
 % Parameters:
 %  t (integer): the current elapsed time (s)
 %  config (struct): contains configuration constants defined in main.m
@@ -98,8 +98,6 @@ for iCar = 1:num_cars
     sums(iCar) = sums(iCar) + stopsFracBase*stops;
     
 end
-
-disp(['Car scores: ', num2str(sums)]);
 
 %% determine best car, return as carIndex
 [~, idx] = max(sums);

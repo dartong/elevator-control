@@ -8,6 +8,8 @@ clear
 
 %% set constants
 
+%DEBUG = true; % if true, output detailed debugging logs for each run
+
 pickerAlg = @naivePicker; % which algorithm to test. Either naivePicker or fastPicker.
                           % The @ sign is needed to create a function handle
 
@@ -42,7 +44,7 @@ end
 %% run simulation
 
 for it = 1:ITERATIONS
-    disp(['--- t = ', num2str(it), ' ---']);
+    msg(['--- t = ', num2str(it), ' ---']);
     
     if it == 1 || rand() < config.CALL_FREQUENCY % always make a call the first time through
         call = makeRandCall(config.NUM_FLOORS);
@@ -53,12 +55,13 @@ for it = 1:ITERATIONS
         callSanitized.fromFloor = call.fromFloor;
         callSanitized.direction = call.direction;
     
-        responder = pickerAlg(it, config, cars, callSanitized);
+        [responder, scores] = pickerAlg(it, config, cars, callSanitized);
         cars(responder).destinations = [cars(responder).destinations, call.fromFloor];
         % TODO: let pickerAlg change the destination queue
         
-        disp(['new call from ', num2str(call.fromFloor), ' to ',...
+        msg(['new call from ', num2str(call.fromFloor), ' to ',...
             num2str(call.toFloor), ', taken by car ', num2str(responder)]);
+        msg(['Car scores: ', num2str(scores)]);
         
         % add data to passengers struct array
         passengers(end+1).startTime = it;
@@ -68,28 +71,28 @@ for it = 1:ITERATIONS
         passengers(end).pickedUp = false;
         passengers(end).droppedOff = false;
     else
-        disp('No call made');
+        msg('No call made');
     end
     
     % --- update all elevator positions ---
     for icar = 1:config.NUM_CARS
         car = cars(icar);
-        disp(['CAR ', num2str(icar), ':']);
+        msg(['CAR ', num2str(icar), ':']);
         
         % If the car still has to wait, don't call updateY. Instead,
         % decrement the time the car has to remain waiting
         if car.timeRemaining > 0
-            disp(['  Waiting for ', num2str(cars(icar).timeRemaining), ' more second(s)']);
+            msg(['  Waiting for ', num2str(cars(icar).timeRemaining), ' more second(s)']);
             cars(icar).timeRemaining = car.timeRemaining - 1;
         else
             [cars(icar).y, cars(icar).velocity] = updateY(config, car);
-            disp(['  to y = ', num2str(car.y)]);
+            msg(['  to y = ', num2str(car.y)]);
         end
         
         
         % if car is stopped at a floor that is a destination
         if car.velocity == 0 && ismember(car.y, car.destinations * config.FLOOR_HEIGHT)
-            disp(['  arrived at y = ', num2str(car.y)]);
+            msg(['  arrived at y = ', num2str(car.y)]);
             
             % adjust the relevant passenger struct(s)
             % start at 2 because the first is empty
@@ -98,12 +101,13 @@ for it = 1:ITERATIONS
                     if passengers(ipass).toFloor * config.FLOOR_HEIGHT == car.y
                         numDroppedOff = numDroppedOff + 1;
                         numPickedUp = numPickedUp - 1;
+                        disp(numPickedUp);
                         
                         passengers(ipass).droppedOff = true;
                         passengers(ipass).dropOffTime = it;
                         passengers(ipass).totalTime = it - passengers(ipass).startTime;
                         
-                        disp(['  dropped off passenger ', num2str(ipass-1),...
+                        msg(['  dropped off passenger ', num2str(ipass-1),...
                             '. Total waiting time: ', num2str(passengers(ipass).totalTime)]);
                         
                         % add new destination to queue and remove current floor
@@ -116,8 +120,9 @@ for it = 1:ITERATIONS
                     if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == car.y
                         numPickedUp = numPickedUp + 1;
                         numWaiting = numWaiting - 1;
+                        disp(numPickedUp);
                         
-                        disp(['  picked up passenger ', num2str(ipass-1)]);
+                        msg(['  picked up passenger ', num2str(ipass-1)]);
                         
                         passengers(ipass).pickedUp = true;
                         passengers(ipass).pickUpTime = it;
@@ -134,17 +139,24 @@ for it = 1:ITERATIONS
             end % end for
         end
         
-        disp(['  destinations: ', num2str(cars(icar).destinations)]);
+        msg(['  destinations: ', num2str(cars(icar).destinations)]);
     end
     
 end
 
 %% display statistics
 
-disp(' ');
+msg(' ');
 disp('----- END OF RUN -----');
 disp(['Iterations: ', num2str(ITERATIONS)]);
 disp(['Total passengers: ', num2str(length(passengers) - 1)]);
 disp(['  Passengers waiting for car: ', num2str(numWaiting)]);
 disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
 disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
+
+function msg(message)
+    DEBUG = true;
+    if DEBUG
+        disp(message);
+    end
+end
