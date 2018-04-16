@@ -30,31 +30,35 @@ newY = car.y;
 
 if ~isempty(car.destinations)
     deltaY = car.destinations(1)*config.FLOOR_HEIGHT - car.y;
-
-    if car.destinations(1) > car.y       % HEAD UP
+    
+    if deltaY > 0       % HEAD UP
         if car.velocity < sqrt(2*config.ACCELERATION * deltaY)  % SPEED UP, HEADING UP
+            disp('Heading up, speeding up');
             newV = car.velocity + config.ACCELERATION;
             
             % make sure we're not above max velocity
-            if car.velocity > config.MAX_VELOCITY
+            if newV > config.MAX_VELOCITY
                 newV = config.MAX_VELOCITY;
             end
             newY = car.y + newV;
         else                            % SLOW DOWN, HEADING UP
+            disp('Heading up, slowing down');
             newV = car.velocity - config.ACCELERATION;
             newY = car.y + newV;
         end
 
-    elseif car.destinations(1) < car.y  % HEAD DOWN
-        if car.velocity > sqrt(2*config.ACCELERATION * -deltaY) % SPEED UP, HEADING DOWN
+    elseif deltaY < 0  % HEAD DOWN
+        if car.velocity > -sqrt(2*config.ACCELERATION * -deltaY) % SPEED UP, HEADING DOWN
+            disp('Heading down, speeding up');
             newV = car.velocity - config.ACCELERATION;
             
             % make sure we're not above max velocity
-            if car.velocity < -config.MAX_VELOCITY
+            if newV < -config.MAX_VELOCITY
                 newV = -config.MAX_VELOCITY;
             end
             newY = car.y + newV;
         else                            % SLOW DOWN, HEADING UP
+            disp('Heading down, slowing down');
             newV = car.velocity + config.ACCELERATION;
             newY = car.y + newV;
         end
@@ -62,6 +66,8 @@ if ~isempty(car.destinations)
     else % stop
         newV = 0;
     end
+    
+    disp([deltaY, newY, newV]);
 else
     newV = 0;
 end
