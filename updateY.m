@@ -5,12 +5,12 @@ function [newY, newV] = updateY(config, car)
 %  car (struct): contains data for the current car to be processed
 %
 % Return:
-%  newY (number between 1 and NUM_FLOORS)
+%  newY (number between 1 and NUM_FLOORS * FLOOR_HEIGHT)
 %  newV (number): new velocity of car (negative is down)
 % 
-% Authors: idiut
+% Authors: Connor Lucey, Stephen Hannon
 
-newY = car.y;
+newY = car.y; %this will be overwritten if velocity is changed
 
 % Overview:
     % FIRST IF: Decides whether the car needs to move
@@ -20,54 +20,62 @@ newY = car.y;
         % If v_f=0, rearranged and with a=1.5, v_0 = sqrt(3x)
             % x is car.destination-car.y or car.y-car.destination
             % depending on direction
-        % I really, really hope this part works.
     % FOURTH IF: Makes sure than abs(v) <= 10 at all times.
-        % config.MAX_VELOCITY-config.ACCELERATION = 8.5 as of now
 % Notes: Using words instead of numbers makes this really hard to
-% understand. 
-% This was written as car.velocity gets the value of newV after each run
-% through. If that's not the case...well...dang it.
+% understand.
 
 if ~isempty(car.destinations)
     deltaY = car.destinations(1)*config.FLOOR_HEIGHT - car.y;
+    deltaYStop = car.velocity^2 / (2*config.ACCELERATION); % stopping distance
     
     if deltaY > 0       % HEAD UP
-        if car.velocity < sqrt(2*config.ACCELERATION * deltaY)  % SPEED UP, HEADING UP
-            disp('Heading up, speeding up');
-            newV = car.velocity + config.ACCELERATION;
+        newV = car.velocity + config.ACCELERATION * config.DELTA_T;
+
+        % make sure we're not above max velocity
+        if newV > config.MAX_VELOCITY
+            newV = config.MAX_VELOCITY;
+        end
             
-            % make sure we're not above max velocity
-            if newV > config.MAX_VELOCITY
-                newV = config.MAX_VELOCITY;
-            end
-            newY = car.y + newV;
+        if newV < sqrt(config.ACCELERATION * deltaY)  % SPEED UP, HEADING UP
+        % if deltaY > deltaYStop % stopping distance
+            disp('Heading up, speeding up');
+            newY = car.y + newV * config.DELTA_T;
         else                            % SLOW DOWN, HEADING UP
-            disp('Heading up, slowing down');
-            newV = car.velocity - config.ACCELERATION;
-            newY = car.y + newV;
+            newV = sqrt(config.ACCELERATION * deltaY); %car.velocity - config.ACCELERATION * config.DELTA_T;
+            disp('Heading up');
+            newY = car.y + newV * config.DELTA_T;
         end
 
     elseif deltaY < 0  % HEAD DOWN
-        if car.velocity > -sqrt(2*config.ACCELERATION * -deltaY) % SPEED UP, HEADING DOWN
-            disp('Heading down, speeding up');
-            newV = car.velocity - config.ACCELERATION;
+        newV = car.velocity - config.ACCELERATION * config.DELTA_T;
+
+        % make sure we're not above max velocity
+        if newV < -config.MAX_VELOCITY
+            newV = -config.MAX_VELOCITY;
+        end
             
-            % make sure we're not above max velocity
-            if newV < -config.MAX_VELOCITY
-                newV = -config.MAX_VELOCITY;
-            end
-            newY = car.y + newV;
+        if newV > -sqrt(config.ACCELERATION * -deltaY) % SPEED UP, HEADING DOWN
+        % if deltaY < -deltaYStop
+            disp('Heading down, speeding up');
+            newY = car.y + newV * config.DELTA_T;
         else                            % SLOW DOWN, HEADING UP
-            disp('Heading down, slowing down');
-            newV = car.velocity + config.ACCELERATION;
-            newY = car.y + newV;
+            disp('Heading down');
+            % newV = car.velocity + config.ACCELERATION * config.DELTA_T;
+            newV = -sqrt(config.ACCELERATION * -deltaY);
+            newY = car.y + newV * config.DELTA_T;
         end
 
     else % stop
         newV = 0;
     end
     
-    disp([deltaY, newY, newV]);
+    % if we can stop at the destination floor, do so
+    if car.velocity > 0 && car.velocity / config.DELTA_T <= config.ACCELERATION && deltaY <= deltaYStop
+        newV = 0;
+        newY = car.destinations(1) * config.FLOOR_HEIGHT;
+    end
+    
+    disp(['  deltaY = ', num2str(deltaY), ', v = ', num2str(newV)]);
 else
     newV = 0;
 end

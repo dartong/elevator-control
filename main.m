@@ -15,9 +15,10 @@ pickerAlg = @naivePicker; % which algorithm to test. Either naivePicker or fastP
 
 ITERATIONS = 10; % number of times to run through (seconds)
 
+config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
 config.CALL_FREQUENCY = 0.2; % average number of calls per iteration (between 0 and 1)
 config.NUM_FLOORS = 5;
-config.NUM_CARS = 1;
+config.NUM_CARS = 2;
 config.FLOOR_HEIGHT = 1; % m
 config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
@@ -45,10 +46,12 @@ end
 
 %% run simulation
 
-for it = 1:ITERATIONS
+for it = 1:config.DELTA_T:ITERATIONS
     msg(['--- t = ', num2str(it), ' ---']);
     
-    if it == 1 || rand() < config.CALL_FREQUENCY % always make a call the first time through
+    % Randomly decide if we should make a call, based on CALL_FREQUENCY.
+    % Always make a call the first time through
+    if it == 1 || rand() < config.CALL_FREQUENCY * config.DELTA_T
         call = makeRandCall(config.NUM_FLOORS);
         numWaiting = numWaiting + 1;
         
@@ -85,7 +88,7 @@ for it = 1:ITERATIONS
         % decrement the time the car has to remain waiting
         if cars(icar).timeRemaining > 0
             msg(['  Waiting for ', num2str(cars(icar).timeRemaining), ' more second(s)']);
-            cars(icar).timeRemaining = cars(icar).timeRemaining - 1;
+            cars(icar).timeRemaining = cars(icar).timeRemaining - config.DELTA_T;
         else
             [cars(icar).y, cars(icar).velocity] = updateY(config, cars(icar));
             msg(['  to y = ', num2str(cars(icar).y)]);

@@ -17,10 +17,7 @@ function [carIndex, sums] = naivePicker(t, config, cars, call)
 % Return:
 %  carIndex (integer between 1 and NUM_CARS) that will respond to this call
 % 
-% Authors: 
-
-
-
+% Authors: Darren Tong, Stephen Hannon
 
 %% Create scoring system, set up basic parameters
 % Gives set values for scores, numbers can be tweaked as necessary
@@ -49,20 +46,20 @@ for iCar = 1:num_cars
     % call data
     %toFloor = call.toFloor;
     direction = call.direction;
-    fromFloor = call.fromFloor;
+    fromY = call.fromFloor * config.FLOOR_HEIGHT; % we're comparing height, not floor number
     
     %% start scoring for iCar
     % floorCorrect
-    if currentPos == fromFloor
+    if currentPos == fromY
         sums(iCar) = sums(iCar) + floorCorrect;
     end
     
     % directionCorrect
     if sign(direction) == sign(velocity)
         % makes sure that car is headed towards call
-        if sign(direction) == -1 && currentPos > fromFloor
+        if sign(direction) == -1 && currentPos > fromY
             sums(iCar) = sums(iCar) + directionCorrect;
-        elseif sign(direction) == 1 && currentPos < fromFloor
+        elseif sign(direction) == 1 && currentPos < fromY
             sums(iCar) = sums(iCar) + directionCorrect;
         end
     end
@@ -75,12 +72,12 @@ for iCar = 1:num_cars
         % TODO: change comparison to be between a destination and its next
         % destination?
         for iDestinations = 1:stops
-            direc = destinations(1,iDestinations) - currentPos;
+            direc = config.FLOOR_HEIGHT * destinations(1,iDestinations) - currentPos;
             % makes sure that car is headed towards call
             if sign(direc) == sign(direction)
-                if sign(direction) == -1 && currentPos > fromFloor
+                if sign(direction) == -1 && currentPos > fromY
                     numSame = numSame + 1;
-                elseif sign(direction) == 1 && currentPos < fromFloor
+                elseif sign(direction) == 1 && currentPos < fromY
                     numSame = numSame + 1;
                 end
             end
@@ -89,7 +86,7 @@ for iCar = 1:num_cars
     end
     
     % distanceFracBase
-    difference = abs(currentPos - fromFloor);
+    difference = abs(currentPos - fromY);
     sums(iCar) = sums(iCar) + distanceFracBase*(1 - (difference/config.NUM_FLOORS));
 
     % stopsFracBase
