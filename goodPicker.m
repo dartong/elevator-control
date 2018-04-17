@@ -1,5 +1,5 @@
 
-function [carIndex, sums] = naivePicker(t, config, cars, call)
+function [carIndex, sums] = goodPicker(t, config, cars, call)
 % Parameters:
 %  t (integer): the current elapsed time (s)
 %  config (struct): contains configuration constants defined in main.m

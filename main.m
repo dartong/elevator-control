@@ -8,9 +8,7 @@ clear
 
 %% set constants
 
-%DEBUG = true; % if true, output detailed debugging logs for each run
-
-pickerAlg = @naivePicker; % which algorithm to test. Either naivePicker or fastPicker.
+pickerAlg = @goodPicker; % which algorithm to test. Either naivePicker or goodPicker.
                           % The @ sign is needed to create a function handle
 
 ITERATIONS = 10; % number of times to run through (seconds)
