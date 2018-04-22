@@ -28,46 +28,6 @@ newY = car.y; %this will be overwritten if velocity is changed
 if ~isempty(car.destinations) % car only needs to move if it has destinations
     deltaY = car.destinations(1)*config.FLOOR_HEIGHT - car.y;
     deltaYStop = car.velocity^2 / (2*config.ACCELERATION); % stopping distance
-    
-    if deltaY > 0       % HEAD UP
-        newV = car.velocity + config.ACCELERATION * config.DELTA_T;
-
-        % make sure we're not above max velocity
-        if newV > config.MAX_VELOCITY
-            newV = config.MAX_VELOCITY;
-        end
-            
-        if newV > sqrt(config.ACCELERATION * deltaY) % if velocity is above the value to stop in time
-            newV = sqrt(config.ACCELERATION * deltaY); %car.velocity - config.ACCELERATION * config.DELTA_T;
-            %disp('Heading up, slowing down');
-        else
-           % disp('Heading up, speeding up');
-        end
-
-    elseif deltaY < 0  % HEAD DOWN
-        newV = car.velocity - config.ACCELERATION * config.DELTA_T;
-
-        % make sure we're not above max velocity
-        if newV < -config.MAX_VELOCITY
-            newV = -config.MAX_VELOCITY;
-        end
-            
-        if newV < -sqrt(config.ACCELERATION * -deltaY) % if velocity is above the value to stop in time
-            %disp('Heading down, slowing down');
-            % newV = car.velocity + config.ACCELERATION * config.DELTA_T;
-            newV = -sqrt(config.ACCELERATION * -deltaY);
-        else
-            %disp('Heading down, speeding up');
-        end
-
-    else % this should never get reached, but just in case
-        disp('deltaY = 0, but updateY called!!!!!');
-        newV = 0;
-    end
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    deltaY = car.destinations(1)*config.FLOOR_HEIGHT - car.y;
     deltaT = t - car.tLeave + config.DELTA_T;
     vMaxMag = sqrt(config.ACCELERATION * abs(car.deltaYLeave));
     
