@@ -8,6 +8,8 @@ clear
 
 %% set constants
 
+PLOTTING = true;
+
 pickerAlg = @goodPicker; % which algorithm to test. Either naivePicker or goodPicker.
                           % The @ sign is needed to create a function handle
 
@@ -17,15 +19,18 @@ config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slow
 config.CALL_FREQUENCY = 0.2; % average number of calls per iteration (between 0 and 1)
 config.NUM_FLOORS = 5;
 config.NUM_CARS = 2;
-config.FLOOR_HEIGHT = 1; % m
+config.FLOOR_HEIGHT = 2; % m
 config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
 config.ACCELERATION = 1.5; % m/s^2
+config.PLOT_SPEED = 2; % times faster to do the simulation (bigger is faster)
 
 %% set variables
 
 passengers = struct();
 cars = struct();
+
+heights = zeros(1, config.NUM_CARS);
 
 numDroppedOff = 0; % number of passengers successfully dropped off
 numPickedUp = 0; % passengers currently in an elevator
@@ -62,8 +67,8 @@ for it = 1:config.DELTA_T:ITERATIONS
         cars(responder).destinations = [cars(responder).destinations, call.fromFloor];
         % TODO: let pickerAlg change the destination queue
         
-        msg(['new call from ', num2str(call.fromFloor), ' to ',...
-            num2str(call.toFloor), ', taken by car ', num2str(responder)]);
+        msg(['new call from ', num2str(call.fromFloor*config.FLOOR_HEIGHT), ' to ',...
+            num2str(call.toFloor*config.FLOOR_HEIGHT), ', taken by car ', num2str(responder)]);
         msg(['Car scores: ', num2str(scores)]);
         
         % add data to passengers struct array
@@ -143,9 +148,28 @@ for it = 1:config.DELTA_T:ITERATIONS
             end % end for
         end
         
-        msg(['  destinations: ', num2str(cars(icar).destinations)]);
+        msg(['  destinations: ', num2str(cars(icar).destinations * config.FLOOR_HEIGHT)]);
+        heights(icar) = cars(icar).y;
     end
     
+
+    if PLOTTING
+        ax = gca; % get curent axes
+        plot(1:config.NUM_CARS, heights,...
+            'Color', 'none',...
+            'Marker', 'square',...
+            'MarkerSize', 20,...
+            'MarkerFaceColor', 'blue'...
+        );
+        axis([0.5, config.NUM_CARS+0.5, 0, config.FLOOR_HEIGHT*config.NUM_FLOORS]);
+        ylabel('Height (m)');
+        xlabel('Elevator car number');
+        ax.XTick = 1:config.NUM_CARS; % force plot to display only integers
+        ax.YGrid = 'on';
+        
+        drawnow;
+        pause(config.DELTA_T / config.PLOT_SPEED);
+    end
 end
 
 %% display statistics
