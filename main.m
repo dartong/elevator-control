@@ -8,10 +8,11 @@ clear
 
 %% set constants
 
-PLOTTING = true;
+PLOTTING = true; % if true, display a plot of the car positions each iteration
 
-pickerAlg = @goodPicker; % which algorithm to test. Either naivePicker or goodPicker.
-                          % The @ sign is needed to create a function handle
+% which algorithm to test. Either naivePicker or goodPicker.
+% The @ sign is needed to create a function handle
+pickerAlg = @goodPicker; 
 
 ITERATIONS = 10; % number of times to run through (seconds)
 
@@ -23,7 +24,7 @@ config.FLOOR_HEIGHT = 2; % m
 config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
 config.ACCELERATION = 1.5; % m/s^2
-config.PLOT_SPEED = 2; % times faster to do the simulation (bigger is faster)
+config.PLOT_SPEED = 3; % times faster to do the simulation (bigger is faster)
 
 %% set variables
 
@@ -92,14 +93,22 @@ for it = 1:config.DELTA_T:ITERATIONS
         if cars(icar).timeRemaining > 0
             msg(['  Waiting for ', num2str(cars(icar).timeRemaining), ' more second(s)']);
             cars(icar).timeRemaining = cars(icar).timeRemaining - config.DELTA_T;
-        else
-            [cars(icar).y, cars(icar).velocity] = updateY(config, cars(icar));
-            msg(['  to y = ', num2str(cars(icar).y)]);
+        elseif ~isempty(cars(icar).destinations)
+            deltaY = cars(icar).destinations(1)*config.FLOOR_HEIGHT - cars(icar).y;
+            if deltaY ~= 0
+                if cars(icar).velocity == 0
+                    cars(icar).tLeave = it;
+                    cars(icar).deltaYLeave = deltaY;
+                end
+                [cars(icar).y, cars(icar).velocity] = updateY(it, config, cars(icar));
+            end
         end
+        msg(['  at y = ', num2str(cars(icar).y)]);
         
         
         % if car is stopped at a floor that is a destination
-        if cars(icar).velocity == 0 && ismember(cars(icar).y, cars(icar).destinations * config.FLOOR_HEIGHT)
+        if cars(icar).velocity == 0 &&...
+                ismember(cars(icar).y, cars(icar).destinations * config.FLOOR_HEIGHT)
             msg(['  arrived at y = ', num2str(cars(icar).y)]);
             
             % adjust the relevant passenger struct(s)
@@ -149,6 +158,10 @@ for it = 1:config.DELTA_T:ITERATIONS
         end
         
         msg(['  destinations: ', num2str(cars(icar).destinations * config.FLOOR_HEIGHT)]);
+        
+%         if PLOTTING
+%             rectangle([icar, cars(icar).y, .2, config.FLOOR_HEIGHT], 'FaceColor', 'blue');
+%         end
         heights(icar) = cars(icar).y;
     end
     
@@ -161,11 +174,17 @@ for it = 1:config.DELTA_T:ITERATIONS
             'MarkerSize', 20,...
             'MarkerFaceColor', 'blue'...
         );
+        
+        yyaxis(ax, 'right');
+        ylim(ax, [1 - config.FLOOR_HEIGHT/4, config.NUM_FLOORS + config.FLOOR_HEIGHT/4]);
+        ax.YTick = 1:config.NUM_FLOORS;
+        
+        yyaxis(ax, 'left');
         axis([0.5, config.NUM_CARS+0.5, 0, config.FLOOR_HEIGHT*config.NUM_FLOORS]);
         ylabel('Height (m)');
         xlabel('Elevator car number');
         ax.XTick = 1:config.NUM_CARS; % force plot to display only integers
-        ax.YGrid = 'on';
+        ax.YGrid = 'on'; % display only y (horizontal) gridlines
         
         drawnow;
         pause(config.DELTA_T / config.PLOT_SPEED);
@@ -183,8 +202,7 @@ disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
 disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
 
 function msg(message)
-    DEBUG = true;
-    if DEBUG
+    if 1
         disp(message);
     end
 end

@@ -1,7 +1,7 @@
 
 function [carIndex, sums] = goodPicker(t, config, cars, call)
 % Parameters:
-%  t (integer): the current elapsed time (s)
+%  t (number): the current elapsed time (s)
 %  config (struct): contains configuration constants defined in main.m
 %  cars (struct array): data for each of the elevator cars
 %       This includes the following data:

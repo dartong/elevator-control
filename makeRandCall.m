@@ -2,7 +2,7 @@ function call = makeRandCall(NUM_FLOORS)
     % Simulates random traffic for elevator. Only gets called if a call
     % should be made (i.e. main.m takes care of that decision)
     %
-    % Authors: 
+    % Authors: Stephen Hannon
     
     call = struct();
     
