@@ -55,15 +55,17 @@ if ~isempty(car.destinations) % car only needs to move if it has destinations
             config.ACCELERATION > abs(car.velocity) / config.DELTA_T > car.velocity^2 / (2*abs(deltaY))
             %abs(car.velocity) / config.DELTA_T <= config.ACCELERATION && ...
             %abs(deltaY) <= abs(deltaYStop)
-        disp('  Autostopping...');
+        %disp('  Autostopping...');
         newV = 0;
         newY = car.destinations(1) * config.FLOOR_HEIGHT;
     end
     
-    disp(['  dy = ', num2str(deltaY), ', v = ', num2str(newV),...
-        ...', t_half = ', num2str(vMaxMag / config.ACCELERATION),...
-        ', dy_stop = ', num2str(deltaYStop),...
-        ', a_min = ', num2str(car.velocity^2 / (2 * abs(deltaY)))]);
-else
+%     disp(['  dy = ', num2str(deltaY), ', v = ', num2str(newV),...
+%         ...', t_half = ', num2str(vMaxMag / config.ACCELERATION),...
+%         ', dy_stop = ', num2str(deltaYStop),...
+%         ', a_min = ', num2str(car.velocity^2 / (2 * abs(deltaY)))]);
+else % this should not be hit
+    disp('UpdateY called with empty destinations!');
+    disp([t, car.velocity, car.y]);
     newV = 0;
 end

@@ -4,7 +4,7 @@
 %
 % Authors: Stephen Hannon
 
-clear
+clear, clf;
 
 %% set constants
 
@@ -17,14 +17,14 @@ pickerAlg = @goodPicker;
 ITERATIONS = 10; % number of times to run through (seconds)
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
-config.CALL_FREQUENCY = 0.2; % average number of calls per iteration (between 0 and 1)
-config.NUM_FLOORS = 5;
-config.NUM_CARS = 2;
-config.FLOOR_HEIGHT = 2; % m
+config.CALL_FREQUENCY = 0.2; % average number of calls per second (between 0 and 1)
+config.NUM_FLOORS = 14;
+config.NUM_CARS = 4;
+config.FLOOR_HEIGHT = 3; % m
 config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
 config.ACCELERATION = 1.5; % m/s^2
-config.PLOT_SPEED = 3; % times faster to do the simulation (bigger is faster)
+config.PLOT_SPEED = 5; % times faster to do the simulation (bigger is faster)
 
 %% set variables
 
@@ -51,6 +51,12 @@ end
 %% run simulation
 
 for it = 1:config.DELTA_T:ITERATIONS
+    % clear the figure so we can put down the next positions
+    if PLOTTING && it ~= 1
+        pause(config.DELTA_T / config.PLOT_SPEED);
+        clf; % clf(ax);
+    end
+    
     msg(['--- t = ', num2str(it), ' ---']);
     
     % Randomly decide if we should make a call, based on CALL_FREQUENCY.
@@ -140,11 +146,12 @@ for it = 1:config.DELTA_T:ITERATIONS
                         numWaiting = numWaiting - 1;
                         %disp(numPickedUp);
                         
-                        msg(['  picked up passenger ', num2str(ipass-1)]);
-                        
                         passengers(ipass).pickedUp = true;
                         passengers(ipass).pickUpTime = it;
                         passengers(ipass).pickUpCar = icar;
+                        
+                        msg(['  picked up passenger ', num2str(ipass-1)]);
+                        msg([numPickedUp, passengers(ipass).pickedUp]);
                         
                         % add new destination to queue and remove current floor
                         fromFiltered = cars(icar).destinations ~= passengers(ipass).fromFloor;
@@ -159,35 +166,55 @@ for it = 1:config.DELTA_T:ITERATIONS
         
         msg(['  destinations: ', num2str(cars(icar).destinations * config.FLOOR_HEIGHT)]);
         
-%         if PLOTTING
-%             rectangle([icar, cars(icar).y, .2, config.FLOOR_HEIGHT], 'FaceColor', 'blue');
-%         end
+        if PLOTTING
+            width = 0.4;
+            pos = [icar - width/2, cars(icar).y - config.FLOOR_HEIGHT, width, config.FLOOR_HEIGHT];
+            rectangle('Position', pos, 'FaceColor', 'blue');
+        end
         heights(icar) = cars(icar).y;
     end
     
 
     if PLOTTING
         ax = gca; % get curent axes
-        plot(1:config.NUM_CARS, heights,...
-            'Color', 'none',...
-            'Marker', 'square',...
-            'MarkerSize', 20,...
-            'MarkerFaceColor', 'blue'...
-        );
         
         yyaxis(ax, 'right');
-        ylim(ax, [1 - config.FLOOR_HEIGHT/4, config.NUM_FLOORS + config.FLOOR_HEIGHT/4]);
+        % on the right y-axis, display floor numbers
+        ylim(ax, [0.5, config.NUM_FLOORS + 0.5]);
+        hold on;
+        
+        for ipass = 2:length(passengers)
+            pass = passengers(ipass);
+            if ~pass.pickedUp
+                if pass.toFloor - pass.fromFloor > 0
+                    % call is heading up
+                    marker = '^';
+                else
+                    marker = 'v';
+                end
+                
+                plot(pass.responder, pass.fromFloor,...
+                    'Marker', marker,...
+                    'MarkerSize', 10,...
+                    'MarkerFaceColor', 'black',...
+                    'MarkerEdgeColor', 'none'...
+                    );
+            end
+        end
+        
+        hold off;
         ax.YTick = 1:config.NUM_FLOORS;
+        ylabel(ax, 'Floor number');
         
         yyaxis(ax, 'left');
         axis([0.5, config.NUM_CARS+0.5, 0, config.FLOOR_HEIGHT*config.NUM_FLOORS]);
         ylabel('Height (m)');
         xlabel('Elevator car number');
+        ax.YTick = 0 : config.FLOOR_HEIGHT : config.FLOOR_HEIGHT*config.NUM_FLOORS;
         ax.XTick = 1:config.NUM_CARS; % force plot to display only integers
-        ax.YGrid = 'on'; % display only y (horizontal) gridlines
+        grid(ax, 'on'); % display only y (horizontal) gridlines
         
         drawnow;
-        pause(config.DELTA_T / config.PLOT_SPEED);
     end
 end
 
@@ -201,6 +228,9 @@ disp(['  Passengers waiting for car: ', num2str(numWaiting)]);
 disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
 disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
 
+% displays detailed debug messages to the command window. This
+% significantly slows running, so set to 0 for more than a few dozen
+% iterations
 function msg(message)
     if 1
         disp(message);
