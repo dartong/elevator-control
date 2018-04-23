@@ -14,14 +14,14 @@ PLOTTING = true; % if true, display a plot of the car positions each iteration
 % The @ sign is needed to create a function handle
 pickerAlg = @goodPicker; 
 
-ITERATIONS = 10; % number of times to run through (seconds)
+ITERATIONS = 30; % number of times to run through (seconds)
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
 config.CALL_FREQUENCY = 0.2; % average number of calls per second (between 0 and 1)
 config.NUM_FLOORS = 14;
 config.NUM_CARS = 4;
 config.FLOOR_HEIGHT = 3; % m
-config.BOARDING_TIME = 1; % time elevator doors stay open for boarding (s)
+config.BOARDING_TIME = 5; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
 config.ACCELERATION = 1.5; % m/s^2
 config.PLOT_SPEED = 5; % times faster to do the simulation (bigger is faster)
@@ -99,6 +99,11 @@ for it = 1:config.DELTA_T:ITERATIONS
         if cars(icar).timeRemaining > 0
             msg(['  Waiting for ', num2str(cars(icar).timeRemaining), ' more second(s)']);
             cars(icar).timeRemaining = cars(icar).timeRemaining - config.DELTA_T;
+            
+            % if that was the last waiting period, set the doors to close
+            if cars(icar).timeRemaining == 0
+                cars(icar).doorsOpen = false;
+            end
         elseif ~isempty(cars(icar).destinations)
             deltaY = cars(icar).destinations(1)*config.FLOOR_HEIGHT - cars(icar).y;
             if deltaY ~= 0
@@ -139,9 +144,11 @@ for it = 1:config.DELTA_T:ITERATIONS
                         cars(icar).destinations = cars(icar).destinations(toFiltered);
                         
                         cars(icar).timeRemaining = config.BOARDING_TIME;
+                        cars(icar).doorsOpen = true;
                     end
                 else % pick passenger up
-                    if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == cars(icar).y
+                    if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == cars(icar).y && ...
+                            passengers(ipass).responder == icar
                         numPickedUp = numPickedUp + 1;
                         numWaiting = numWaiting - 1;
                         %disp(numPickedUp);
@@ -159,6 +166,7 @@ for it = 1:config.DELTA_T:ITERATIONS
                             cars(icar).destinations(fromFiltered)];
                         
                         cars(icar).timeRemaining = config.BOARDING_TIME;
+                        cars(icar).doorsOpen = true;
                     end
                 end
             end % end for
@@ -167,14 +175,23 @@ for it = 1:config.DELTA_T:ITERATIONS
         msg(['  destinations: ', num2str(cars(icar).destinations * config.FLOOR_HEIGHT)]);
         
         if PLOTTING
-            width = 0.4;
-            pos = [icar - width/2, cars(icar).y - config.FLOOR_HEIGHT, width, config.FLOOR_HEIGHT];
-            rectangle('Position', pos, 'FaceColor', 'blue');
+            % display each car's position as a rectangle on the plot
+            width = 0.5;
+            pos = [icar - width/2, cars(icar).y - config.FLOOR_HEIGHT,...
+                width, config.FLOOR_HEIGHT];
+            
+            if cars(icar).doorsOpen
+                faceColor = [.4 .6 .6]; % darker blue
+            else
+                faceColor = [.65 .85 .9]; % light blue
+            end
+            
+            rectangle('Position', pos, 'FaceColor', faceColor);
         end
         heights(icar) = cars(icar).y;
     end
     
-
+    % display every call on the plot to show each car's destination(s)
     if PLOTTING
         ax = gca; % get curent axes
         
@@ -185,15 +202,21 @@ for it = 1:config.DELTA_T:ITERATIONS
         
         for ipass = 2:length(passengers)
             pass = passengers(ipass);
-            if ~pass.pickedUp
-                if pass.toFloor - pass.fromFloor > 0
-                    % call is heading up
-                    marker = '^';
+            if ~pass.droppedOff
+                if ~pass.pickedUp
+                    if pass.toFloor - pass.fromFloor > 0
+                        % call is heading up
+                        marker = '^';
+                    else
+                        marker = 'v';
+                    end
+                    y = pass.fromFloor;
                 else
-                    marker = 'v';
+                    marker = 'square';
+                    y = pass.toFloor;
                 end
                 
-                plot(pass.responder, pass.fromFloor,...
+                plot(pass.responder, y,...
                     'Marker', marker,...
                     'MarkerSize', 10,...
                     'MarkerFaceColor', 'black',...
@@ -214,25 +237,37 @@ for it = 1:config.DELTA_T:ITERATIONS
         ax.XTick = 1:config.NUM_CARS; % force plot to display only integers
         grid(ax, 'on'); % display only y (horizontal) gridlines
         
-        drawnow;
+        %drawnow;
     end
 end
 
 %% display statistics
 
+numPassengers = length(passengers) - 1;
+times = [];
+for ipass = 1:numPassengers
+    if(passengers(ipass).droppedOff)
+        times(end+1) = passengers(ipass).totalTime;
+    end
+end
+
 msg(' ');
 disp('----- END OF RUN -----');
 disp(['Iterations: ', num2str(ITERATIONS)]);
-disp(['Total passengers: ', num2str(length(passengers) - 1)]);
+disp(['Total passengers: ', num2str(numPassengers)]);
 disp(['  Passengers waiting for car: ', num2str(numWaiting)]);
 disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
 disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
+disp('Time statistics');
+disp(['   Averave wait time:  ', num2str(mean(times))]);
+disp(['   Shortest wait time: ', num2str(min(times))]);
+disp(['   Longest wait time:  ', num2str(max(times))]);
 
 % displays detailed debug messages to the command window. This
 % significantly slows running, so set to 0 for more than a few dozen
 % iterations
 function msg(message)
-    if 1
+    if 0
         disp(message);
     end
 end
