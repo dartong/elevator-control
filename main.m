@@ -1,3 +1,4 @@
+function main(handles)
 % main.m
 % 
 % Controls overall functionality of the program.
@@ -8,13 +9,13 @@ clear, clf;
 
 %% set constants
 
-PLOTTING = true; % if true, display a plot of the car positions each iteration
+PLOTTING = false; % if true, display a plot of the car positions each iteration
 
 % which algorithm to test. Either naivePicker or goodPicker.
 % The @ sign is needed to create a function handle
 pickerAlg = @goodPicker; 
 
-ITERATIONS = 30; % number of times to run through (seconds)
+ITERATIONS = 1000; % number of seconds to run through
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
 config.CALL_FREQUENCY = 0.2; % average number of calls per second (between 0 and 1)
@@ -125,12 +126,13 @@ for it = 1:config.DELTA_T:ITERATIONS
             % adjust the relevant passenger struct(s)
             % start at 2 because the first is empty
             for ipass = 2:length(passengers)
-                if passengers(ipass).pickedUp % drop passenger off
+                % drop passenger off
+                if passengers(ipass).pickedUp && ~passengers(ipass).droppedOff
                     if passengers(ipass).toFloor * config.FLOOR_HEIGHT == cars(icar).y && ...
                             passengers(ipass).responder == icar
                         numDroppedOff = numDroppedOff + 1;
                         numPickedUp = numPickedUp - 1;
-                        %disp(numPickedUp);
+                        msg(numPickedUp);
                         
                         passengers(ipass).droppedOff = true;
                         passengers(ipass).dropOffTime = it;
@@ -146,12 +148,12 @@ for it = 1:config.DELTA_T:ITERATIONS
                         cars(icar).timeRemaining = config.BOARDING_TIME;
                         cars(icar).doorsOpen = true;
                     end
-                else % pick passenger up
+                elseif ~passengers(ipass).droppedOff % pick passenger up
                     if passengers(ipass).fromFloor * config.FLOOR_HEIGHT == cars(icar).y && ...
                             passengers(ipass).responder == icar
                         numPickedUp = numPickedUp + 1;
                         numWaiting = numWaiting - 1;
-                        %disp(numPickedUp);
+                        msg(numPickedUp);
                         
                         passengers(ipass).pickedUp = true;
                         passengers(ipass).pickUpTime = it;
@@ -270,4 +272,6 @@ function msg(message)
     if 0
         disp(message);
     end
+end
+
 end
