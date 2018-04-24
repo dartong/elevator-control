@@ -22,7 +22,7 @@ function varargout = elevatorTool(varargin)
 
 % Edit the above text to modify the response to help elevatorTool
 
-% Last Modified by GUIDE v2.5 24-Apr-2018 13:15:30
+% Last Modified by GUIDE v2.5 24-Apr-2018 17:16:20
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -79,6 +79,11 @@ function runButton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+%handles.stopButton.Enable = 'on';
+%handles.pauseButton.Enable = 'on';
+handles.runButton.Enable = 'off';
+main(handles);
+handles.runButton.Enable = 'on';
 
 % --- Executes on button press in plottingCheck.
 function plottingCheck_Callback(hObject, eventdata, handles)
@@ -133,3 +138,24 @@ function deltaTEdit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in stopButton.
+function stopButton_Callback(hObject, eventdata, handles)
+% hObject    handle to stopButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pauseButton.
+function pauseButton_Callback(hObject, eventdata, handles)
+% hObject    handle to pauseButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in stepButton.
+function stepButton_Callback(hObject, eventdata, handles)
+% hObject    handle to stepButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

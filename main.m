@@ -5,17 +5,18 @@ function main(handles)
 %
 % Authors: Stephen Hannon
 
-clear, clf;
+%clf;
 
 %% set constants
 
-PLOTTING = false; % if true, display a plot of the car positions each iteration
+PLOTTING = true; % if true, display a plot of the car positions each iteration
 
 % which algorithm to test. Either naivePicker or goodPicker.
 % The @ sign is needed to create a function handle
 pickerAlg = @goodPicker; 
 
-ITERATIONS = 1000; % number of seconds to run through
+ITERATIONS = 30; % number of seconds to run through
+ax = gca;
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
 config.CALL_FREQUENCY = 0.2; % average number of calls per second (between 0 and 1)
@@ -26,6 +27,22 @@ config.BOARDING_TIME = 5; % time elevator doors stay open for boarding (s)
 config.MAX_VELOCITY = 10; % m/s
 config.ACCELERATION = 1.5; % m/s^2
 config.PLOT_SPEED = 5; % times faster to do the simulation (bigger is faster)
+
+% Some of the above constants will be changed by the GUI inputs. This
+% allows the user to run main.m directly or through the GUI. (Click "Run"
+% and enter [] as the input to the function.)
+if ~isempty(handles)
+    PLOTTING = handles.plottingCheck.Value;
+    ITERATIONS = str2double(handles.iterationsEdit.String);
+    config.DELTA_T = str2double(handles.deltaTEdit.String);
+    ax = handles.elevatorAxes;
+    
+    if handles.goodRadio.Value
+        pickerAlg = @goodPicker;
+    else
+        pickerAlg = @naivePicker;
+    end
+end
 
 %% set variables
 
@@ -55,7 +72,8 @@ for it = 1:config.DELTA_T:ITERATIONS
     % clear the figure so we can put down the next positions
     if PLOTTING && it ~= 1
         pause(config.DELTA_T / config.PLOT_SPEED);
-        clf; % clf(ax);
+        cla(ax, 'reset');
+        handles.tText.String = ['t = ', num2str(it)];
     end
     
     msg(['--- t = ', num2str(it), ' ---']);
@@ -188,37 +206,39 @@ for it = 1:config.DELTA_T:ITERATIONS
                 faceColor = [.65 .85 .9]; % light blue
             end
             
-            rectangle('Position', pos, 'FaceColor', faceColor);
+            rectangle(ax, 'Position', pos, 'FaceColor', faceColor);
         end
         heights(icar) = cars(icar).y;
     end
     
     % display every call on the plot to show each car's destination(s)
     if PLOTTING
-        ax = gca; % get curent axes
+        %ax = gca; % get curent axes
         
         yyaxis(ax, 'right');
         % on the right y-axis, display floor numbers
         ylim(ax, [0.5, config.NUM_FLOORS + 0.5]);
-        hold on;
+        hold(ax, 'on');
         
         for ipass = 2:length(passengers)
             pass = passengers(ipass);
             if ~pass.droppedOff
                 if ~pass.pickedUp
+                    y = pass.fromFloor;
                     if pass.toFloor - pass.fromFloor > 0
                         % call is heading up
                         marker = '^';
+                        y = y + 0.25;
                     else
                         marker = 'v';
+                        y = y - 0.25;
                     end
-                    y = pass.fromFloor;
                 else
                     marker = 'square';
                     y = pass.toFloor;
                 end
                 
-                plot(pass.responder, y,...
+                plot(ax, pass.responder, y,...
                     'Marker', marker,...
                     'MarkerSize', 10,...
                     'MarkerFaceColor', 'black',...
@@ -227,14 +247,14 @@ for it = 1:config.DELTA_T:ITERATIONS
             end
         end
         
-        hold off;
+        hold(ax, 'off');
         ax.YTick = 1:config.NUM_FLOORS;
         ylabel(ax, 'Floor number');
         
         yyaxis(ax, 'left');
-        axis([0.5, config.NUM_CARS+0.5, 0, config.FLOOR_HEIGHT*config.NUM_FLOORS]);
-        ylabel('Height (m)');
-        xlabel('Elevator car number');
+        axis(ax, [0.5, config.NUM_CARS+0.5, 0, config.FLOOR_HEIGHT*config.NUM_FLOORS]);
+        ylabel(ax, 'Height (m)');
+        xlabel(ax, 'Elevator car number');
         ax.YTick = 0 : config.FLOOR_HEIGHT : config.FLOOR_HEIGHT*config.NUM_FLOORS;
         ax.XTick = 1:config.NUM_CARS; % force plot to display only integers
         grid(ax, 'on'); % display only y (horizontal) gridlines
@@ -260,10 +280,11 @@ disp(['Total passengers: ', num2str(numPassengers)]);
 disp(['  Passengers waiting for car: ', num2str(numWaiting)]);
 disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
 disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
-disp('Time statistics');
-disp(['   Averave wait time:  ', num2str(mean(times))]);
-disp(['   Shortest wait time: ', num2str(min(times))]);
-disp(['   Longest wait time:  ', num2str(max(times))]);
+disp('Wait times:');
+disp(['   Averave:            ', num2str(mean(times))]);
+disp(['   Shortest:           ', num2str(min(times))]);
+disp(['   Longest:            ', num2str(max(times))]);
+disp(['   Standard deviation: ', num2str(std(times))]);
 
 % displays detailed debug messages to the command window. This
 % significantly slows running, so set to 0 for more than a few dozen
