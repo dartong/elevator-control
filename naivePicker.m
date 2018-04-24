@@ -24,7 +24,4 @@ for iCar = 1:num_cars
     
 end
 
-%% determine best car,
-%[~, idx] = max(sums);
-%carIndex = idx;
 end
