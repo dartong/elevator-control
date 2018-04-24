@@ -16,7 +16,7 @@ PLOTTING = true; % if true, display a plot of the car positions each iteration
 pickerAlg = @goodPicker; 
 
 ITERATIONS = 30; % number of seconds to run through
-ax = gca;
+ax = gca; % get current axes
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
 config.CALL_FREQUENCY = 0.2; % average number of calls per second (between 0 and 1)
@@ -35,6 +35,9 @@ if ~isempty(handles)
     PLOTTING = handles.plottingCheck.Value;
     ITERATIONS = str2double(handles.iterationsEdit.String);
     config.DELTA_T = str2double(handles.deltaTEdit.String);
+    config.CALL_FREQUENCY = str2double(handles.callfrequencyEdit.String);
+    config.FLOOR_HEIGHT = str2double(handles.floorheightEdit.String);
+    config.PLOT_SPEED = str2double(handles.plotspeedEdit.String);
     ax = handles.elevatorAxes;
     
     if handles.goodRadio.Value
@@ -285,6 +288,23 @@ disp(['   Averave:            ', num2str(mean(times))]);
 disp(['   Shortest:           ', num2str(min(times))]);
 disp(['   Longest:            ', num2str(max(times))]);
 disp(['   Standard deviation: ', num2str(std(times))]);
+
+% if we're running this from the GUI, prepare a table of statistics
+if ~isempty(handles)
+    handles.tText.String = ['t = ', num2str(ITERATIONS)];
+    stats = {
+        'Iterations', ITERATIONS;
+        'Total passengers', numPassengers;
+        'Passengers waiting for car', numWaiting;
+        'Passengers riding elevator', numPickedUp;
+        'Passengers dropped off', numDroppedOff;
+        'Average wait time', mean(times);
+        'Shortest wait time', min(times);
+        'Longest wait time', max(times);
+        'Standard deviation', std(times)
+    };
+    handles.statsTable.Data = stats;
+end
 
 % displays detailed debug messages to the command window. This
 % significantly slows running, so set to 0 for more than a few dozen
