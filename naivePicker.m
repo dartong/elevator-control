@@ -7,25 +7,24 @@ distanceFracBase = 20;
 
 
 %% Sum totals
+distance=1000000000
 for iCar = 1:num_cars
     %% simplify structs
     % car data
     currentPos = cars(iCar).y;
-    destinations = cars(iCar).destinations;
-    velocity = cars(iCar).velocity;
-    [~,stops] = size(destinations);  % gets number of stops
-    
     % call data
-    fromY = call.fromFloor * config.FLOOR_HEIGHT; % we're comparing height, not floor number
-    
-    %% Scoring
+    fromY = call.fromFloor * config.FLOOR_HEIGHT; 
     % distanceFracBase
     difference = abs(currentPos - fromY);
-    sums(iCar) = sums(iCar) + distanceFracBase*(1 - (difference/config.NUM_FLOORS));
-
+    %sums(iCar) = sums(iCar) + distanceFracBase*(1 - (difference/config.NUM_FLOORS));
+    if difference < distance;
+        distance = difference;
+        carIndex=iCar;
+    end
+    
 end
 
 %% determine best car,
-[~, idx] = max(sums);
-carIndex = idx;
+%[~, idx] = max(sums);
+%carIndex = idx;
 end
