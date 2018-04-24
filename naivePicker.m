@@ -1,4 +1,4 @@
-function [carIndex, sums] = badPicker(t, config, cars, call)
+function [carIndex, sums] = naivePicker(t, config, cars, call)
 %% Create scoring system, set up basic parameters
 
 num_cars = config.NUM_CARS; 
