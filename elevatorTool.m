@@ -83,7 +83,9 @@ function runButton_Callback(hObject, eventdata, handles)
 %handles.pauseButton.Enable = 'on';
 
 %hObject.Enable = 'off';
+hObject.String = 'Running...';
 main(handles);
+%hObject.String = 'Run simulation';
 %hObject.Enable = 'on';
 
 % --- Executes on button press in plottingCheck.

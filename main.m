@@ -17,7 +17,7 @@ PLOTTING = true; % if true, display a plot of the car positions each iteration
 % The @ sign is needed to create a function handle
 pickerAlg = @goodPicker; 
 
-ITERATIONS = 50; % number of seconds to run through
+ITERATIONS = 100; % number of seconds to run through
 ax = gca; % get current axes
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
@@ -75,8 +75,8 @@ end
 
 for it = 1:config.DELTA_T:ITERATIONS
     %% clear the figure so we can put down the next positions
-    if PLOTTING && it ~= 1
-        pause(config.DELTA_T / config.PLOT_SPEED);
+    if PLOTTING && it ~= 1 || it == ITERATIONS
+        drawnow; %pause(config.DELTA_T / config.PLOT_SPEED);
         cla(ax, 'reset');
         handles.tText.String = ['t = ', num2str(it)];
     end
@@ -224,7 +224,7 @@ for it = 1:config.DELTA_T:ITERATIONS
         
         msg(['  destinations: ', num2str(cars(icar).destinations * config.FLOOR_HEIGHT)]);
         
-        if PLOTTING
+        if PLOTTING || it == ITERATIONS
             % display each car's position as a rectangle on the plot
             width = 0.5;
             pos = [icar - width/2, cars(icar).y - config.FLOOR_HEIGHT,...
@@ -244,7 +244,7 @@ for it = 1:config.DELTA_T:ITERATIONS
     %% plot car destinations
     
     % display every call on the plot to show each car's destination(s)
-    if PLOTTING
+    if PLOTTING || it == ITERATIONS
         %ax = gca; % get curent axes
         
         yyaxis(ax, 'right');
@@ -317,10 +317,11 @@ disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
 disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
 disp('Wait times:');
 disp(['   Average:            ', num2str(mean(times))]);
+disp(['   Median:             ', num2str(median(times))]);
 disp(['   Shortest:           ', num2str(min(times))]);
 disp(['   Longest:            ', num2str(max(times))]);
 disp(['   Standard deviation: ', num2str(std(times))]);
-%histogram(times);
+
 
 % if we're running this from the GUI, prepare a table of statistics
 if ~isempty(handles)
@@ -332,6 +333,7 @@ if ~isempty(handles)
         'Passengers riding elevator', numPickedUp;
         'Passengers dropped off', numDroppedOff;
         'Average wait time', mean(times);
+        'Median wait time', median(times);
         'Shortest wait time', min(times);
         'Longest wait time', max(times);
         'Standard deviation', std(times)
@@ -341,7 +343,17 @@ if ~isempty(handles)
     end
     handles.statsTable.Data = stats;
     handles.runButton.String = 'Run simulation';
+    
+    ax = handles.histogramAxes;
+else
+    figure;
+    ax = gca;
 end
+
+histogram(ax, times);
+title('Histogram of wait times');
+xlabel('Wait time (s)');
+ylabel('Frequency');
 
 %% msg function
 % displays detailed debug messages to the command window. This
