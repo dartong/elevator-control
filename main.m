@@ -9,13 +9,15 @@ function main(handles)
 
 %% set constants
 
+tic; % start timer to see how long it takes to compute
+
 PLOTTING = true; % if true, display a plot of the car positions each iteration
 
 % which algorithm to test. Either naivePicker or goodPicker.
 % The @ sign is needed to create a function handle
 pickerAlg = @goodPicker; 
 
-ITERATIONS = 30; % number of seconds to run through
+ITERATIONS = 50; % number of seconds to run through
 ax = gca; % get current axes
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
@@ -72,7 +74,7 @@ end
 %% run simulation
 
 for it = 1:config.DELTA_T:ITERATIONS
-    % clear the figure so we can put down the next positions
+    %% clear the figure so we can put down the next positions
     if PLOTTING && it ~= 1
         pause(config.DELTA_T / config.PLOT_SPEED);
         cla(ax, 'reset');
@@ -80,6 +82,8 @@ for it = 1:config.DELTA_T:ITERATIONS
     end
     
     msg(['--- t = ', num2str(it), ' ---']);
+    
+    %% randomly make call
     
     % Randomly decide if we should make a call, based on CALL_FREQUENCY.
     % Always make a call the first time through
@@ -111,9 +115,8 @@ for it = 1:config.DELTA_T:ITERATIONS
         msg('No call made');
     end
     
-    % --- update all elevator positions ---
+    %% update all elevator positions
     for icar = 1:config.NUM_CARS
-        car = cars(icar);
         msg(['CAR ', num2str(icar), ':']);
         
         % If the car still has to wait, don't call updateY. Instead,
@@ -127,9 +130,33 @@ for it = 1:config.DELTA_T:ITERATIONS
                 cars(icar).doorsOpen = false;
             end
         elseif ~isempty(cars(icar).destinations)
-            deltaY = cars(icar).destinations(1)*config.FLOOR_HEIGHT - cars(icar).y;
-            if deltaY ~= 0
+            deltaYs = cars(icar).destinations*config.FLOOR_HEIGHT - cars(icar).y;
+            if deltaYs(1) ~= 0
                 if cars(icar).velocity == 0
+                    % sort the destinations for a more optimal order of travel,
+                    % but only if the car isn't moving
+                    
+                    destinationsUp = cars(icar).destinations(deltaYs > 0);
+                    destinationsDown = cars(icar).destinations(deltaYs < 0);
+                    
+                    % Tiebreaker so we head in the direction of the current
+                    % first destination if there are equal calls in both
+                    % directions. If the first call is up, add 0.5 to the
+                    % length of destinationsUp so it will win if there equal
+                    % calls up and down. Otherwise, 0.5 will be subtracted so
+                    % destinationsDown will win in a tie.
+                    tiebreaker = sign(deltaYs(1))/2;
+                    
+                    if tiebreaker + length(destinationsUp) > length(destinationsDown) % heading up
+                        cars(icar).destinations = ...
+                            [sort(destinationsUp), sort(destinationsDown, 'descend')];
+                    else % heading down
+                        cars(icar).destinations = ...
+                            [sort(destinationsDown, 'descend'), sort(destinationsUp)];
+                    end
+                % make deltaY with the new first destination
+                deltaY = cars(icar).destinations(1)*config.FLOOR_HEIGHT - cars(icar).y;
+                
                     cars(icar).tLeave = it;
                     cars(icar).deltaYLeave = deltaY;
                 end
@@ -214,6 +241,8 @@ for it = 1:config.DELTA_T:ITERATIONS
         heights(icar) = cars(icar).y;
     end
     
+    %% plot car destinations
+    
     % display every call on the plot to show each car's destination(s)
     if PLOTTING
         %ax = gca; % get curent axes
@@ -278,16 +307,20 @@ end
 
 msg(' ');
 disp('----- END OF RUN -----');
+if ~PLOTTING
+    disp(['Took ', num2str(toc), ' seconds to compute']);
+end
 disp(['Iterations: ', num2str(ITERATIONS)]);
 disp(['Total passengers: ', num2str(numPassengers)]);
 disp(['  Passengers waiting for car: ', num2str(numWaiting)]);
 disp(['  Passengers riding elevator: ', num2str(numPickedUp)]);
 disp(['  Passengers dropped off:     ', num2str(numDroppedOff)]);
 disp('Wait times:');
-disp(['   Averave:            ', num2str(mean(times))]);
+disp(['   Average:            ', num2str(mean(times))]);
 disp(['   Shortest:           ', num2str(min(times))]);
 disp(['   Longest:            ', num2str(max(times))]);
 disp(['   Standard deviation: ', num2str(std(times))]);
+%histogram(times);
 
 % if we're running this from the GUI, prepare a table of statistics
 if ~isempty(handles)
@@ -303,9 +336,14 @@ if ~isempty(handles)
         'Longest wait time', max(times);
         'Standard deviation', std(times)
     };
+    if ~PLOTTING
+        stats = [stats; {'Time to compute (s)', toc}];
+    end
     handles.statsTable.Data = stats;
+    handles.runButton.String = 'Run simulation';
 end
 
+%% msg function
 % displays detailed debug messages to the command window. This
 % significantly slows running, so set to 0 for more than a few dozen
 % iterations
