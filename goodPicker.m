@@ -30,7 +30,10 @@ floorCorrect = 100;     % same floor as call
 directionCorrect = 70;  % same direction
 directionFracBase = 50;     % fraction of calls towards the same direction/all calls
 distanceFracBase = 20;      % 1 - fraction of (distance)/(building height)
-stopsFracBase = -300;      % fraction of (number of destinations)/(number of floors)
+stopsFracBase = -500;      % fraction of (number of destinations)/(number of floors)
+                           % This can be a huge number because the fraction
+                           % it gets multiplied by will be typically fairly
+                           % small.
 
 
 %% Sums each car's point total
