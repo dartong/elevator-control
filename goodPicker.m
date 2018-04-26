@@ -29,8 +29,8 @@ sums = zeros(1,num_cars);   % holds the score total for each car
 floorCorrect = 100;     % same floor as call
 directionCorrect = 70;  % same direction
 directionFracBase = 50;     % fraction of calls towards the same direction/all calls
-distanceFracBase = 20;      % 1 - fraction of distance/building height
-stopsFracBase = -150;      % fraction of stops/number of floors
+distanceFracBase = 20;      % 1 - fraction of (distance)/(building height)
+stopsFracBase = -300;      % fraction of (number of destinations)/(number of floors)
 
 
 %% Sums each car's point total
@@ -41,7 +41,7 @@ for iCar = 1:num_cars
     currentPos = cars(iCar).y;
     destinations = cars(iCar).destinations;
     velocity = cars(iCar).velocity;
-    [~,stops] = size(destinations);  % gets number of stops
+    [~,numStops] = size(destinations);  % gets number of stops
     
     % call data
     %toFloor = call.toFloor;
@@ -65,13 +65,13 @@ for iCar = 1:num_cars
     end
     
     % directionFracBase
-    if stops > 0 % only matters if there are already stops
+    if numStops > 0 % only matters if there are already stops
         numSame = 0;
         % for loop checks each destination and determines the direction needed
         % to be taken
         % TODO: change comparison to be between a destination and its next
         % destination?
-        for iDestinations = 1:stops
+        for iDestinations = 1:numStops
             direc = config.FLOOR_HEIGHT * destinations(1,iDestinations) - currentPos;
             % makes sure that car is headed towards call
             if sign(direc) == sign(direction)
@@ -82,17 +82,18 @@ for iCar = 1:num_cars
                 end
             end
         end
-        sums(iCar) = sums(iCar) + directionFracBase * (numSame/stops);
+        sums(iCar) = sums(iCar) + directionFracBase * (numSame/numStops);
     end
     
     % distanceFracBase
     difference = abs(currentPos - fromY);
-    sums(iCar) = sums(iCar) + distanceFracBase*(1 - (difference/config.NUM_FLOORS));
+    sums(iCar) = sums(iCar) + ...
+        distanceFracBase*(1 - (difference / (config.FLOOR_HEIGHT*config.NUM_FLOORS)));
 
     % stopsFracBase
-    stops = stops/num_cars;
+    numStops = numStops/config.NUM_FLOORS;
     %disp(stops);
-    sums(iCar) = sums(iCar) + stopsFracBase*stops;
+    sums(iCar) = sums(iCar) + stopsFracBase*numStops;
     
 end
 

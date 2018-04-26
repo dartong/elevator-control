@@ -11,17 +11,16 @@ function main(handles)
 
 tic; % start timer to see how long it takes to compute
 
-PLOTTING = true; % if true, display a plot of the car positions each iteration
+PLOTTING = false; % if true, display a plot of the car positions each iteration
 
 % which algorithm to test. Either naivePicker or goodPicker.
 % The @ sign is needed to create a function handle
 pickerAlg = @goodPicker; 
 
-ITERATIONS = 100; % number of seconds to run through
-ax = gca; % get current axes
+ITERATIONS = 1000; % number of seconds to run through
 
 config.DELTA_T = 0.5; % seconds between updates (smaller means smoother but slower)
-config.CALL_FREQUENCY = 0.2; % average number of calls per second (between 0 and 1)
+config.CALL_FREQUENCY = 0.15; % average number of calls per second (between 0 and 1)
 config.NUM_FLOORS = 14;
 config.NUM_CARS = 4;
 config.FLOOR_HEIGHT = 3; % m
@@ -47,6 +46,9 @@ if ~isempty(handles)
     else
         pickerAlg = @naivePicker;
     end
+else
+    figure(1);
+    ax = gca; % get current axes
 end
 
 %% set variables
@@ -78,7 +80,9 @@ for it = 1:config.DELTA_T:ITERATIONS
     if PLOTTING && it ~= 1 || it == ITERATIONS
         drawnow; %pause(config.DELTA_T / config.PLOT_SPEED);
         cla(ax, 'reset');
-        handles.tText.String = ['t = ', num2str(it)];
+        if PLOTTING && it ~= 1
+            handles.tText.String = ['t = ', num2str(it)];
+        end
     end
     
     msg(['--- t = ', num2str(it), ' ---']);
@@ -180,7 +184,6 @@ for it = 1:config.DELTA_T:ITERATIONS
                             passengers(ipass).responder == icar
                         numDroppedOff = numDroppedOff + 1;
                         numPickedUp = numPickedUp - 1;
-                        msg(numPickedUp);
                         
                         passengers(ipass).droppedOff = true;
                         passengers(ipass).dropOffTime = it;
@@ -201,14 +204,12 @@ for it = 1:config.DELTA_T:ITERATIONS
                             passengers(ipass).responder == icar
                         numPickedUp = numPickedUp + 1;
                         numWaiting = numWaiting - 1;
-                        msg(numPickedUp);
                         
                         passengers(ipass).pickedUp = true;
                         passengers(ipass).pickUpTime = it;
                         passengers(ipass).pickUpCar = icar;
                         
                         msg(['  picked up passenger ', num2str(ipass-1)]);
-                        msg([numPickedUp, passengers(ipass).pickedUp]);
                         
                         % add new destination to queue and remove current floor
                         fromFiltered = cars(icar).destinations ~= passengers(ipass).fromFloor;
@@ -305,6 +306,12 @@ for ipass = 1:numPassengers
     end
 end
 
+% when displaying the histogram, chop off the top and bottom 1% so the
+% relevant data is more easily seen.
+timesSorted = sort(times);
+chop = floor(0.01 * length(times));
+timesChopped = timesSorted(chop+1 : end - chop);
+
 msg(' ');
 disp('----- END OF RUN -----');
 if ~PLOTTING
@@ -321,7 +328,6 @@ disp(['   Median:             ', num2str(median(times))]);
 disp(['   Shortest:           ', num2str(min(times))]);
 disp(['   Longest:            ', num2str(max(times))]);
 disp(['   Standard deviation: ', num2str(std(times))]);
-
 
 % if we're running this from the GUI, prepare a table of statistics
 if ~isempty(handles)
@@ -346,11 +352,11 @@ if ~isempty(handles)
     
     ax = handles.histogramAxes;
 else
-    figure;
+    figure(2);
     ax = gca;
 end
 
-histogram(ax, times);
+histogram(ax, timesChopped);
 title('Histogram of wait times');
 xlabel('Wait time (s)');
 ylabel('Frequency');
