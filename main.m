@@ -38,7 +38,6 @@ if ~isempty(handles)
     config.DELTA_T = str2double(handles.deltaTEdit.String);
     config.CALL_FREQUENCY = str2double(handles.callfrequencyEdit.String);
     config.FLOOR_HEIGHT = str2double(handles.floorheightEdit.String);
-    config.PLOT_SPEED = str2double(handles.plotspeedEdit.String);
     ax = handles.elevatorAxes;
     
     if handles.goodRadio.Value
@@ -348,7 +347,7 @@ if ~isempty(handles)
         stats = [stats; {'Time to compute (s)', toc}];
     end
     handles.statsTable.Data = stats;
-    handles.runButton.String = 'Run simulation';
+%     handles.runButton.String = 'Run simulation';
     
     ax = handles.histogramAxes;
 else
