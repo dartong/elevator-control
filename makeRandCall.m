@@ -9,6 +9,7 @@ function call = makeRandCall(NUM_FLOORS)
     call.fromFloor = randi(NUM_FLOORS);
 
     call.toFloor = randi(NUM_FLOORS);
+    
     % make sure toFloor isn't the same as fromFloor
     while call.toFloor == call.fromFloor
         call.toFloor = randi(NUM_FLOORS);

@@ -79,11 +79,7 @@ function runButton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-%handles.stopButton.Enable = 'on';
-%handles.pauseButton.Enable = 'on';
-
 hObject.Enable = 'off';
-%hObject.String = 'Running...';
 main(handles);
 hObject.Enable = 'on';
 
